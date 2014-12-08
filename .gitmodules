@@ -1,0 +1,3 @@
+[submodule "deps/libut"]
+	path = deps/libut
+	url = https://github.com/xant/libut
