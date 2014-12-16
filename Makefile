@@ -88,7 +88,7 @@ install:
 	 cp -v libtxml.a $(LIBDIR)/;\
 	 cp -v libtxml.$(SHAREDEXT) $(LIBDIR)/;\
 	 echo "Installing headers in $(INCDIR)"; \
-	 cp -v src/*.h $(INCDIR)/;
+	 cp -v src/txml.h $(INCDIR)/;
 
 .PHONY: docs
 docs:
