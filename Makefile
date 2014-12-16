@@ -39,7 +39,7 @@ TESTS = $(patsubst %.c, %, $(wildcard test/*_test.c))
 
 TEST_EXEC_ORDER = txml_test
 
-all: CFLAGS += -Ideps/.incs
+all: CFLAGS += -Ideps/.incs -Wno-unused-but-set-variable
 all: $(DEPS) objects static shared
 
 .PHONY: build_deps
