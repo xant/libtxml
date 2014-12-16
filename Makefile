@@ -29,7 +29,9 @@ endif
 
 ifneq ("$(USE_ICONV)", "")
 CFLAGS += "-DUSE_ICONV"
+ifeq ($(UNAME), Darwin)
 LDFLAGS += -liconv
+endif
 endif
 
 IS_CLANG := $(shell $(CC) --version | grep clang)
