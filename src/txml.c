@@ -1,7 +1,7 @@
 /*
  *  Imported from tinyxml.c - Created by xant on 2/17/06.
  */
-#include "bsd_queue.h"
+#include <bsd_queue.h>
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>

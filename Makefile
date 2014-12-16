@@ -70,11 +70,10 @@ clean:
 	rm -f test/*_test
 	rm -f libtxml.a
 	rm -f libtxml.$(SHAREDEXT)
-	@if [ -f support/libut/Makefile ]; then make -C support/libut clean; fi
 
 .PHONY:tests
 tests: CFLAGS += -Isrc -Ideps/.incs -Wall -Werror -Wno-parentheses -Wno-pointer-sign $(CLANG_FLAGS) -DTHREAD_SAFE -g -O3
-tests: libut static
+tests: static
 	@for i in $(TESTS); do\
 	  echo "$(CC) $(CFLAGS) $$i.c -o $$i libtxml.a $(LDFLAGS) -lm";\
 	  $(CC) $(CFLAGS) $$i.c -o $$i libtxml.a deps/.libs/libut.a $(LDFLAGS) -lm;\
@@ -82,7 +81,7 @@ tests: libut static
 	for i in $(TEST_EXEC_ORDER); do echo; test/$$i; echo; done
 
 .PHONY: test
-test: tests
+test: all tests
 
 install:
 	 @echo "Installing libraries in $(LIBDIR)"; \
