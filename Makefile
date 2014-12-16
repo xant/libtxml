@@ -27,6 +27,11 @@ ifeq ("$(INCDIR)", "")
 INCDIR=/usr/local/include
 endif
 
+ifneq ("$(USE_ICONV)", "")
+CFLAGS += "-DUSE_ICONV"
+LDFLAGS += -liconv
+endif
+
 IS_CLANG := $(shell $(CC) --version | grep clang)
 
 ifneq ("$(IS_CLANG)", "")

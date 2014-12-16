@@ -1352,10 +1352,10 @@ txml_parse_file(txml_t *xml, char *path)
                     fclose(infile);
                     return -1;
                 }
-                out = (char *)calloc(1, olen);
+                char *out = (char *)calloc(1, olen);
                 iconvin = buffer;
                 iconvout = out;
-                cb = iconv(ich, &iconvin, &ilen, &iconvout, &olen);
+                int cb = iconv(ich, &iconvin, &ilen, &iconvout, &olen);
                 if (cb == -1) {
                     fprintf(stderr, "Can't convert encoding: %s\n", strerror(errno));
                     free(buffer);
