@@ -96,6 +96,7 @@ install:
 	 cp -v libtxml.$(SHAREDEXT) $(LIBDIR)/;\
 	 echo "Installing headers in $(INCDIR)"; \
 	 cp -v src/txml.h $(INCDIR)/;
+	 cp -v src/bsd_queue.h $(INCDIR)/;
 
 .PHONY: docs
 docs:

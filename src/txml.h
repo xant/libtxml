@@ -21,6 +21,8 @@ extern "C" {
 #define TXML_BAD_CHARS -7
 #define TXML_MROOT_ERR -8
 
+#include "bsd_queue.h"
+
 struct __txml_node_s;
 struct __txml_s;
 
