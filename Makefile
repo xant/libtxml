@@ -1,6 +1,6 @@
 UNAME := $(shell uname)
 
-LDFLAGS += -Ldeps/.libs
+LDFLAGS +=
 
 DEPS = 
 
@@ -46,7 +46,7 @@ TESTS = $(patsubst %.c, %, $(wildcard test/*_test.c))
 
 TEST_EXEC_ORDER = txml_test
 
-all: CFLAGS += -Ideps/.incs -Wno-unused-but-set-variable
+all: CFLAGS += -Wno-unused-but-set-variable
 all: $(DEPS) objects static shared
 
 .PHONY: build_deps
