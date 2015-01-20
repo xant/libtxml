@@ -23,66 +23,10 @@ extern "C" {
 
 #include "bsd_queue.h"
 
-struct __txml_node_s;
-struct __txml_s;
-
-typedef struct __txml_namespace_s {
-    char *name;
-    char *uri;
-    TAILQ_ENTRY(__txml_namespace_s) list;
-} txml_namespace_t;
-
-/**
-    @brief One attribute associated to an element 
-*/
-typedef struct __txml_attribute_s {
-    char *name; ///< the attribute name
-    char *value; ///< the attribute value
-    struct __txml_node_s *node;
-    TAILQ_ENTRY(__txml_attribute_s) list;
-} txml_attribute_t;
-
-typedef struct __txml_namespace_set_s {
-    txml_namespace_t *ns;
-    TAILQ_ENTRY(__txml_namespace_set_s) next;
-} txml_namespace_set_t;
-
-typedef struct __txml_node_s {
-    char *path;
-    char *name;
-    struct __txml_node_s *parent;
-    char *value;
-    TAILQ_HEAD(,__txml_node_s) children;
-    TAILQ_HEAD(,__txml_attribute_s) attributes;
-#define TXML_NODETYPE_SIMPLE 0
-#define TXML_NODETYPE_COMMENT 1
-#define TXML_NODETYPE_CDATA 2
-    char type;
-    txml_namespace_t *ns;  // namespace of this node (if any)
-    txml_namespace_t *cns; // new default namespace defined by this node
-    txml_namespace_t *hns; // hinerited namespace (if any)
-    // all namespaces valid in this scope ( implicit namespaces )
-    TAILQ_HEAD(,__txml_namespace_set_s) known_namespaces; 
-    // storage for newly defined namespaces 
-    // (needed keep track of allocated txml_namespace_t structures for later release)
-    TAILQ_HEAD(,__txml_namespace_s) namespaces; 
-    TAILQ_ENTRY(__txml_node_s) siblings;
-    struct __txml_s *context; // set only if rootnode (otherwise it's always NULL)
-} txml_node_t;
-
-TAILQ_HEAD(nodelist_head, __txml_node_s);
-
-typedef struct __txml_s {
-    txml_node_t *cnode;
-    TAILQ_HEAD(,__txml_node_s) root_elements;
-    char *head;
-    char output_encoding[64];  /* XXX probably oversized, 24 or 32 should be enough */
-    char document_encoding[64];
-    int use_namespaces;
-    int allow_multiple_root_nodes;
-    int ignore_white_spaces;
-    int ignore_blanks;
-} txml_t;
+typedef struct __txml_s txml_t;
+typedef struct __txml_node_s txml_node_t;
+typedef struct __txml_attribute_s txml_attribute_t;
+typedef struct __txml_namespace_s txml_namespace_t;
 
 /***
     @brief Create a new xml context
@@ -108,14 +52,14 @@ void txml_context_destroy(txml_t *xml);
     @arg the null terminated string buffer containing the xml profile
     @return true if buffer is parsed successfully , false otherwise)
 */
-txml_err_t txml_parse_buffer(txml_t *xml,char *buf);
+txml_err_t txml_parse_buffer(txml_t *xml, char *buf);
 
 /***
     @brief parse an xml file containing the profile and fills internal structures appropriately
     @arg a null terminating string representing the path to the xml file
     @return an txml_err_t error status (XML_NOERR if buffer was parsed successfully)
 */
-txml_err_t txml_parse_file(txml_t *xml,char *path);
+txml_err_t txml_parse_file(txml_t *xml, char *path);
 
 /***
     @brief dump the entire xml configuration tree that reflects the status of internal structures
@@ -143,7 +87,7 @@ void txml_set_output_encoding(txml_t *xml, char *encoding);
     @return a null terminated string containing the xml representation of the configuration tree.
     The memory allocated for the dump-string must be freed by the user when no more needed
 */
-char *txml_dump_branch(txml_t *xml,txml_node_t *node,unsigned int depth);
+char *txml_dump_branch(txml_t *xml, txml_node_t *node, unsigned int depth);
 
 /***
     @brief Makes txml_node_t *node a root node in context represented by txml_t *xml 
@@ -151,9 +95,9 @@ char *txml_dump_branch(txml_t *xml,txml_node_t *node,unsigned int depth);
     @arg the new root node
     @return XML_NOERR on success, error code otherwise
  */
-txml_err_t txml_add_root_node(txml_t *xml,txml_node_t *node);
+txml_err_t txml_add_root_node(txml_t *xml, txml_node_t *node);
 
-txml_node_t *txml_node_create(char *name,char *val,txml_node_t *parent);
+txml_node_t *txml_node_create(char *name, char *val, txml_node_t *parent);
 
 /*** 
     @brief associate a value to txml_node_t *node. XML_NOERR is returned if no error occurs 
@@ -161,7 +105,7 @@ txml_node_t *txml_node_create(char *name,char *val,txml_node_t *parent);
     @arg the value we want to set for node
     @return XML_NOERR if success , error code otherwise
  */
-txml_err_t txml_node_set_value(txml_node_t *node,char *val);
+txml_err_t txml_node_set_value(txml_node_t *node, char *val);
 
 /***
     @brief get value for an txml_node_t
@@ -169,6 +113,8 @@ txml_err_t txml_node_set_value(txml_node_t *node,char *val);
     @return returns value associated to txml_node_t *node 
  */
 char *txml_node_get_value(txml_node_t *node);
+
+char *txml_node_get_name(txml_node_t *node);
 
 /****
     @brief free resources for txml_node_t *node and all its subnodes 
@@ -182,7 +128,7 @@ void txml_node_destroy(txml_node_t *node);
     @arg the new child
     @return return XML_NOERR on success, error code otherwise 
 */
-txml_err_t txml_node_add_child(txml_node_t *parent,txml_node_t *child);
+txml_err_t txml_node_add_child(txml_node_t *parent, txml_node_t *child);
 
 /***
     @brief access next sibling of a node (if any)
@@ -206,7 +152,7 @@ txml_node_t *txml_node_prev_sibling(txml_node_t *node);
     @arg the value of the new attribute
     @return XML_NOERR on success, error code otherwise
  */
-txml_err_t txml_node_add_attribute(txml_node_t *node,char *name,char *val);
+txml_err_t txml_node_add_attribute(txml_node_t *node, char *name, char *val);
 
 /***
     @brief substitute an existing branch with a new one
@@ -215,16 +161,16 @@ txml_err_t txml_node_add_attribute(txml_node_t *node,char *name,char *val);
     @arg the root of the new branch
     @reurn XML_NOERR on success, error code otherwise
  */
-txml_err_t txml_subst_branch(txml_t *xml,unsigned long index, txml_node_t *newBranch);
+txml_err_t txml_subst_branch(txml_t *xml, unsigned long index, txml_node_t *newBranch);
 
 /***
     @brief Remove a specific node from the xml structure
  */
-txml_err_t txml_remove_node(txml_t *xml,char *path);
+txml_err_t txml_remove_node(txml_t *xml, char *path);
 
 /***
  */
-txml_err_t txml_remove_branch(txml_t *xml,unsigned long index);
+txml_err_t txml_remove_branch(txml_t *xml, unsigned long index);
 
 /***
     @brief Returns the number of root nodes in the xml context 
@@ -264,7 +210,7 @@ txml_node_t *txml_get_node(txml_t *xml, char *path);
     @return the root node at requested index
 
  */
-txml_node_t *txml_get_branch(txml_t *xml,unsigned long index);
+txml_node_t *txml_get_branch(txml_t *xml, unsigned long index);
 
 /***
     @brief get the child at a specific index inside a node
@@ -272,14 +218,14 @@ txml_node_t *txml_get_branch(txml_t *xml,unsigned long index);
     @arg the index of the child we are interested in
     @return the selected child node 
  */
-txml_node_t *txml_node_get_child(txml_node_t *node,unsigned long index);
+txml_node_t *txml_node_get_child(txml_node_t *node, unsigned long index);
 /***
     @brief get the first child of an txml_node_t whose name is 'name'
     @arg the parent node
     @arg the name of the desired child node
     @return the requested child node
  */
-txml_node_t *txml_node_get_child_byname(txml_node_t *node,char *name);
+txml_node_t *txml_node_get_child_byname(txml_node_t *node, char *name);
 
 
 /***
@@ -289,7 +235,7 @@ txml_node_t *txml_node_get_child_byname(txml_node_t *node,char *name);
     @return a pointer to a valid txml_attribute_t structure if found at
     the specified offset, NULL otherwise
 */
-txml_attribute_t *txml_node_get_attribute(txml_node_t *node,unsigned long index);
+txml_attribute_t *txml_node_get_attribute(txml_node_t *node, unsigned long index);
 
 /***
     @brief get node attribute with specified name
@@ -313,6 +259,9 @@ int txml_node_remove_attribute(txml_node_t *node, unsigned long index);
 */
 void txml_node_clear_attributes(txml_node_t *node);
 
+char *txml_attribute_get_name(txml_attribute_t *attr);
+
+char *txml_attribute_get_value(txml_attribute_t *attr);
 
 /***
     @brief save the configuration stored in the xml file containing the current profile
@@ -322,27 +271,14 @@ void txml_node_clear_attributes(txml_node_t *node);
     @arg the path where to save the file
     @return an txml_err_t error status (XML_NOERR if buffer was parsed successfully)
 */
-txml_err_t txml_save(txml_t *xml,char *path);
-
-/***
-    @brief allocate resources for a new namespace 
-    @arg the shortname of the new namespace
-    @arg the complete uri of the new namspace
-    @return a valid txml_namespace_t pointer on success, NULL otherwise
-*/
-txml_namespace_t *txml_namespace_create(char *nsName, char *nsUri);
-
-/***
- 
-*/
-void txml_namespace_destroy(txml_namespace_t *ns);
+txml_err_t txml_save(txml_t *xml, char *path);
 
 /***
     @brief search for a specific namespace defined within the current document
     @arg pointer to a valid txml_node_t structure
     @arg the shortname of the new namespace
 */
-txml_namespace_t *txml_node_get_namespace_byname(txml_node_t *node, char *nsName);
+txml_namespace_t *txml_node_get_namespace_byname(txml_node_t *node, char *ns_name);
 
 /***
     @brief search for a specific namespace defined within the current document
@@ -350,39 +286,34 @@ txml_namespace_t *txml_node_get_namespace_byname(txml_node_t *node, char *nsName
     @arg the complete uri of the new namspace
     @return a valid txml_namespace_t pointer if found, NULL otherwise
 */
-txml_namespace_t *txml_node_get_namespace_byuri(txml_node_t *node, char *nsUri);
+txml_namespace_t *txml_node_get_namespace_byuri(txml_node_t *node, char *ns_uri);
 
 /***
-    @brief create a new namespace and link it to current document/context
+    @brief create a new namespace and link it to a node
     @arg pointer to a valid txml_node_t structure
     @arg the shortname of the new namespace
     @arg the complete uri of the new namspace
     @return a valid txml_namespace_t pointer if found, NULL otherwise
 */
-txml_namespace_t *txml_node_add_namespace(txml_node_t *node, char *nsName, char *nsUri);
+txml_namespace_t *txml_node_add_namespace(txml_node_t *node, char *ns_name, char *ns_uri);
 
 /***
-    @brief get the namespace of a node , if any
+    @brief get the namespace of a node , if any.
+    @note if multiple namespaces are defined for a node, this function will return only the first one.\n
+          Use txml_node_get_namespaces() to retrieve all the configured namespaces for a node
     @arg pointer to a valid txml_node_t strucutre
     @return a pointer to the txml_namespace_t of the node if defined or inherited, NULL otherwise
 */
 txml_namespace_t *txml_node_get_namespace(txml_node_t *node);
 
-/***
-    @brief set the namespace of a node
-    @arg pointer to a valid txml_node_t structure
-    @return XML_NOERR on success, any other xml error code otherwise
-*/ 
-txml_err_t txml_node_set_namespace(txml_node_t *node, txml_namespace_t *ns);
+unsigned long txml_node_count_namespaces(txml_node_t *node);
+unsigned long txml_node_get_namespaces(txml_node_t *node, txml_namespace_t **output_list, unsigned long list_size);
 
-/***
-    @brief set the default namespace of a node 
-           (which will be inherited by all descendant, unless overridden)
-    @arg pointer to a valid txml_node_t structure
-    @arg pointer to a valid txml_namespace_t structure
-    @return XML_NOERR on success, any other xml error code otherwise
-*/ 
-txml_err_t txml_node_set_cnamespace(txml_node_t *node, txml_namespace_t *ns);
+char *txml_namespace_get_name(txml_namespace_t *ns);
+
+char *txml_namespace_get_uri(txml_namespace_t *ns);
+
+int txml_node_is_linked(txml_node_t *node);
 
 int txml_has_iconv();
 

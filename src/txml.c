@@ -54,6 +54,70 @@
 #define XML_ELEMENT_END    3
 #define XML_ELEMENT_UNIQUE 4
 
+struct __txml_node_s;
+struct __txml_s;
+
+struct __txml_namespace_s {
+    char *name;
+    char *uri;
+    TAILQ_ENTRY(__txml_namespace_s) list;
+};
+
+/**
+    @brief One attribute associated to an element 
+*/
+struct __txml_attribute_s {
+    char *name; ///< the attribute name
+    char *value; ///< the attribute value
+    struct __txml_node_s *node;
+    TAILQ_ENTRY(__txml_attribute_s) list;
+};
+
+typedef struct __txml_namespace_set_s {
+    struct __txml_namespace_s *ns;
+    TAILQ_ENTRY(__txml_namespace_set_s) next;
+} txml_namespace_set_t;
+
+struct __txml_node_s {
+    char *path;
+    char *name;
+    struct __txml_node_s *parent;
+    char *value;
+    TAILQ_HEAD(,__txml_node_s) children;
+    TAILQ_HEAD(,__txml_attribute_s) attributes;
+#define TXML_NODETYPE_SIMPLE 0
+#define TXML_NODETYPE_COMMENT 1
+#define TXML_NODETYPE_CDATA 2
+    char type;
+    struct __txml_namespace_s *ns;  // namespace of this node (if any)
+    struct __txml_namespace_s *cns; // new default namespace defined by this node
+    struct __txml_namespace_s *hns; // hinerited namespace (if any)
+    // all namespaces valid in this scope ( implicit namespaces )
+    TAILQ_HEAD(,__txml_namespace_set_s) known_namespaces; 
+    // storage for newly defined namespaces 
+    // (needed keep track of allocated txml_namespace_t structures for later release)
+    TAILQ_HEAD(,__txml_namespace_s) namespaces; 
+    TAILQ_ENTRY(__txml_node_s) siblings;
+    struct __txml_s *context; // set only if rootnode (otherwise it's always NULL)
+};
+
+TAILQ_HEAD(nodelist_head, __txml_node_s);
+
+struct __txml_s {
+    txml_node_t *cnode;
+    TAILQ_HEAD(,__txml_node_s) root_elements;
+    char *head;
+    char output_encoding[64];  /* XXX probably oversized, 24 or 32 should be enough */
+    char document_encoding[64];
+    int use_namespaces;
+    int allow_multiple_root_nodes;
+    int ignore_white_spaces;
+    int ignore_blanks;
+};
+
+static txml_namespace_t *txml_namespace_create(char *ns_name, char *ns_uri);
+static void txml_namespace_destroy(txml_namespace_t *ns);
+
 //
 // INTERNAL HELPERS
 //
@@ -429,13 +493,20 @@ txml_node_set_value(txml_node_t *node, char *val)
     return TXML_NOERR;
 }
 
-/* quite useless */
 char *
 txml_node_get_value(txml_node_t *node)
 {
     if(!node)
         return NULL;
     return node->value;
+}
+
+char *
+txml_node_get_name(txml_node_t *node)
+{
+    if(!node)
+        return NULL;
+    return node->name;
 }
 
 static void
@@ -677,6 +748,22 @@ txml_attribute_t
             return attr;
     }
     return NULL;
+}
+
+char *
+txml_attribute_get_name(txml_attribute_t *attr)
+{
+    if (!attr)
+        return NULL;
+    return attr->name;
+}
+
+char *
+txml_attribute_get_value(txml_attribute_t *attr)
+{
+    if (!attr)
+        return NULL;
+    return attr->value;
 }
 
 static txml_err_t
@@ -2133,22 +2220,51 @@ txml_node_get_namespace(txml_node_t *node) {
     return NULL;
 }
 
-txml_err_t
-txml_node_set_cnamespace(txml_node_t *node, txml_namespace_t *ns) {
-    if (!node || !ns)
-        return TXML_BADARGS;
-    
-    node->cns = ns;
-    return TXML_NOERR;
+unsigned long
+txml_node_count_namespaces(txml_node_t *node)
+{
+    txml_namespace_t *ns;
+    int cnt = 0;
+    TAILQ_FOREACH(ns, &node->namespaces, list) 
+        cnt++;
+    return cnt;
 }
 
-txml_err_t
-txml_node_set_namespace(txml_node_t *node, txml_namespace_t *ns) {
-    if (!node || !ns)
-        return TXML_BADARGS;
-    
-    node->ns = ns;
-    return TXML_NOERR;
+unsigned long
+txml_node_get_namespaces(txml_node_t *node, txml_namespace_t **output_list, unsigned long list_size)
+{
+    txml_namespace_t *ns;
+    int cnt = 0;
+    TAILQ_FOREACH(ns, &node->namespaces, list) {
+        output_list[cnt++] = ns;
+        cnt++;
+        if (cnt >= list_size)
+            break;
+    }
+    return cnt;
+   
+}
+
+char *
+txml_namespace_get_name(txml_namespace_t *ns)
+{
+    if (!ns)
+        return NULL;
+    return ns->name;
+}
+
+char *
+txml_namespace_get_uri(txml_namespace_t *ns)
+{
+    if (!ns)
+        return NULL;
+    return ns->uri;
+}
+
+int
+txml_node_is_linked(txml_node_t *node)
+{
+    return (node->context != NULL || node->parent != NULL);
 }
 
 int
